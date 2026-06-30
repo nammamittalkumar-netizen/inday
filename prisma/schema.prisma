@@ -1,0 +1,168 @@
+// Prisma schema for DailyLog
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  image        String?
+  bio          String?   @db.VarChar(200)
+  createdAt    DateTime  @default(now())
+
+  posts    Post[]
+  comments Comment[]
+  likes    Like[]
+
+  // People this user follows.
+  following Follow[] @relation("Following")
+  // People who follow this user.
+  followers Follow[] @relation("Followers")
+
+  // Notifications addressed to this user.
+  notifications Notification[] @relation("Recipient")
+  // Notifications this user triggered for others.
+  actedNotifications Notification[] @relation("Actor")
+
+  // Direct-message conversations this user takes part in.
+  conversations ConversationParticipant[]
+  // Messages this user has sent.
+  sentMessages  Message[]
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  body      String   @db.VarChar(500)
+  imageUrl  String?
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments Comment[]
+  likes    Like[]
+
+  notifications Notification[]
+
+  @@index([createdAt])
+  @@index([authorId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  body      String   @db.VarChar(300)
+  authorId  String
+  postId    String
+  createdAt DateTime @default(now())
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([authorId])
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([postId])
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
+}
+
+enum NotificationType {
+  LIKE
+  COMMENT
+  FOLLOW
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  type        NotificationType
+  // The user who receives this notification.
+  recipientId String
+  // The user whose action triggered it.
+  actorId     String
+  // The post involved, for LIKE/COMMENT. Null for FOLLOW.
+  postId      String?
+  read        Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+
+  recipient User  @relation("Recipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  actor     User  @relation("Actor", fields: [actorId], references: [id], onDelete: Cascade)
+  post      Post? @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  // Feed of a user's notifications, newest first.
+  @@index([recipientId, createdAt])
+  // Fast unread-badge count.
+  @@index([recipientId, read])
+}
+
+/// A 1:1 direct-message thread between two users.
+model Conversation {
+  id            String   @id @default(cuid())
+  // Canonical "sortedUserIdA:sortedUserIdB" key — guarantees one thread per pair.
+  key           String   @unique
+  createdAt     DateTime @default(now())
+  // Bumped on every new message so threads sort by recency.
+  lastMessageAt DateTime @default(now())
+
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@index([lastMessageAt])
+}
+
+model ConversationParticipant {
+  id             String    @id @default(cuid())
+  conversationId String
+  userId         String
+  // When this user last opened the thread; drives the unread count.
+  lastReadAt     DateTime?
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  senderId       String
+  body           String   @db.VarChar(2000)
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
