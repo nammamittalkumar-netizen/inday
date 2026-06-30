@@ -1,0 +1,33 @@
+# AWS Application Load Balancer (ALB) Ingress.
+# Requires the AWS Load Balancer Controller to be installed in the cluster.
+# ALB natively proxies WebSocket upgrades, so /api/ws works without extra config.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: inday
+  namespace: inday
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    # ACM certificate for the host below.
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:us-east-1:ACCOUNT_ID:certificate/CERT_ID"
+    alb.ingress.kubernetes.io/healthcheck-path: /api/health
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+    # Sticky sessions: harmless at 1 replica, and required if you ever scale the
+    # WebSocket layer with a shared fanout so a client keeps hitting one pod.
+    alb.ingress.kubernetes.io/target-group-attributes: stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=86400
+spec:
+  ingressClassName: alb
+  rules:
+    - host: inday.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: inday-web
+                port:
+                  number: 80

@@ -1,0 +1,17 @@
+node_modules
+.next
+npm-debug.log*
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+README.md
+DEPLOY.md
+k8s
+.vscode
+.idea
+*.log
+.DS_Store
+coverage
+.turbo

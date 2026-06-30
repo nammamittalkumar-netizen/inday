@@ -6,6 +6,30 @@ export function initialOf(name?: string | null): string {
   return trimmed ? trimmed[0]!.toUpperCase() : "?";
 }
 
+/** Up to two initials (first + last word), e.g. "Ada Lovelace" → "AL". */
+export function initialsOf(name?: string | null): string {
+  const parts = name?.trim().split(/\s+/).filter(Boolean) ?? [];
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0]![0]!.toUpperCase();
+  return (parts[0]![0]! + parts[parts.length - 1]![0]!).toUpperCase();
+}
+
+/**
+ * Deterministic, pleasant background color derived from a name — the colored
+ * default-avatar pattern used by Google, Slack and Discord. The same name
+ * always yields the same hue.
+ */
+export function avatarColor(seed?: string | null): string {
+  const str = seed?.trim() || "?";
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    hash |= 0; // keep it a 32-bit int
+  }
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue} 60% 45%)`;
+}
+
 /** Human relative time, e.g. "2 hours ago". */
 export function relativeTime(iso: string | Date): string {
   const date = typeof iso === "string" ? new Date(iso) : iso;

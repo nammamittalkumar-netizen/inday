@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { Menu, PenSquare, LogOut, User as UserIcon, Settings, Bell, MessageCircle } from "lucide-react";
+import { Menu, PenSquare, LogOut, User as UserIcon, Settings, Bell, MessageCircle, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand-logo";
@@ -45,6 +45,14 @@ export function Navbar() {
           <ThemeToggle />
           {status === "loading" ? null : user ? (
             <>
+              <Button
+                render={<Link href="/discover" />}
+                variant="ghost"
+                size="icon"
+                aria-label="Discover people"
+              >
+                <Search className="size-5" />
+              </Button>
               <MessagesIndicator />
               <NotificationBell />
               <Button render={<Link href="/new" />} size="sm">
@@ -137,6 +145,15 @@ export function Navbar() {
                 <Button render={<Link href="/new" />} onClick={() => setOpen(false)}>
                   <PenSquare className="size-4" />
                   New Post
+                </Button>
+                <Button
+                  render={<Link href="/discover" />}
+                  variant="ghost"
+                  className="justify-start"
+                  onClick={() => setOpen(false)}
+                >
+                  <Search className="size-4" />
+                  Discover
                 </Button>
                 <Button
                   render={<Link href="/profile" />}

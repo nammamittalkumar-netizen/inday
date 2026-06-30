@@ -11,9 +11,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { ImageUpload } from "@/components/image-upload";
+import { InterestChips } from "@/components/interest-chips";
 import { apiFetch, ApiError } from "@/lib/api-client";
 
 const BIO_MAX = 200;
+const MAX_INTERESTS = 10;
 
 type Props = {
   initial: {
@@ -21,6 +23,7 @@ type Props = {
     name: string;
     image: string | null;
     bio: string | null;
+    interests: string[];
   };
 };
 
@@ -30,7 +33,18 @@ export function EditProfileForm({ initial }: Props) {
   const [name, setName] = useState(initial.name);
   const [bio, setBio] = useState(initial.bio ?? "");
   const [image, setImage] = useState<string | null>(initial.image);
+  const [interests, setInterests] = useState<string[]>(initial.interests);
   const [saving, setSaving] = useState(false);
+
+  function toggleInterest(slug: string) {
+    setInterests((prev) =>
+      prev.includes(slug)
+        ? prev.filter((s) => s !== slug)
+        : prev.length >= MAX_INTERESTS
+          ? prev
+          : [...prev, slug],
+    );
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -44,7 +58,13 @@ export function EditProfileForm({ initial }: Props) {
         method: "PATCH",
         body: JSON.stringify({ name: name.trim(), bio, image }),
       });
-      await update?.(); // refresh the navbar avatar/name
+      await apiFetch("/api/profile/interests", {
+        method: "PUT",
+        body: JSON.stringify({ interests }),
+      });
+      // Pass a payload so next-auth issues a POST (trigger: "update"); a bare
+      // update() does a GET that skips the jwt DB re-read, leaving a stale avatar.
+      await update?.({ name: name.trim(), image }); // refresh the navbar avatar/name
       toast.success("Profile updated");
       router.push(`/profile/${initial.id}`);
       router.refresh();
@@ -94,6 +114,18 @@ export function EditProfileForm({ initial }: Props) {
             <p className="text-right text-xs text-muted-foreground">
               {bio.length}/{BIO_MAX}
             </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Interests</Label>
+            <p className="text-xs text-muted-foreground">
+              Pick up to {MAX_INTERESTS} — they help us suggest people to follow.
+            </p>
+            <InterestChips
+              selected={interests}
+              onToggle={toggleInterest}
+              disabled={saving}
+            />
           </div>
 
           <div className="flex justify-end gap-2 border-t border-border pt-4">

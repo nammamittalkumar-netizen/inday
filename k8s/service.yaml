@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: inday-web
+  namespace: inday
+  labels:
+    app: inday
+spec:
+  type: ClusterIP
+  selector:
+    app: inday
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP

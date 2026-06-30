@@ -37,6 +37,22 @@ model User {
   conversations ConversationParticipant[]
   // Messages this user has sent.
   sentMessages  Message[]
+
+  // Topics this user cares about — drives "who to follow" suggestions.
+  interests Interest[] @relation("UserInterests")
+}
+
+/// A topic of interest a user can pick (e.g. "Technology"). Selected at signup
+/// and editable later; shared interests power user suggestions.
+model Interest {
+  id        String   @id @default(cuid())
+  // Stable identifier from the seeded catalog (e.g. "technology").
+  slug      String   @unique
+  // Human-readable name shown in the UI.
+  label     String
+  createdAt DateTime @default(now())
+
+  users User[] @relation("UserInterests")
 }
 
 model Post {

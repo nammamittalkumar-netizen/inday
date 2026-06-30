@@ -1,0 +1,48 @@
+# Local end-to-end run: Postgres + the app in one network.
+#
+#   docker compose up --build
+#   open http://localhost:3000
+#
+# The key detail vs `docker run`: the app reaches Postgres at host "db" (the
+# service name on the compose network) — NOT "localhost", which inside a
+# container means the container itself. That mismatch is the usual cause of
+# "backend errors" when running the image by hand.
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: inday
+      POSTGRES_PASSWORD: inday
+      POSTGRES_DB: inday
+    ports:
+      - "5432:5432" # exposed so you can also `prisma studio` from the host
+    volumes:
+      - inday-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inday -d inday"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "postgresql://inday:inday@db:5432/inday?schema=public"
+      AUTH_SECRET: "dev-secret-change-me"
+      NEXTAUTH_SECRET: "dev-secret-change-me"
+      NEXTAUTH_URL: "http://localhost:3000"
+      # Image uploads need real Cloudinary creds; blank = uploads return 503.
+      CLOUDINARY_CLOUD_NAME: ""
+      CLOUDINARY_API_KEY: ""
+      CLOUDINARY_API_SECRET: ""
+    depends_on:
+      db:
+        condition: service_healthy
+    # Apply migrations against a fresh DB, then start the custom Next+WS server.
+    command: sh -c "npx prisma migrate deploy && node server.mjs"
+
+volumes:
+  inday-db:

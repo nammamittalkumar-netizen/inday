@@ -96,6 +96,15 @@ export type FollowUserPage = {
 
 export type FollowConnectionType = "followers" | "following";
 
+/** A user surfaced by search — same shape as a follow-list entry. */
+export type SearchUser = FollowUser;
+
+/** A "who to follow" suggestion with a short human reason for the match. */
+export type SuggestedUser = FollowUser & {
+  /** e.g. "3 shared interests", "Followed by Ada", "Popular on Inday". */
+  reason: string;
+};
+
 export type NotificationKind = "LIKE" | "COMMENT" | "FOLLOW";
 
 export type NotificationItem = {

@@ -1,0 +1,37 @@
+# Runs `prisma migrate deploy` against the database. Apply this (and wait for
+# completion) before rolling out a new Deployment that expects the new schema.
+#
+#   kubectl apply -f k8s/migrate-job.yaml
+#   kubectl -n inday wait --for=condition=complete job/inday-migrate --timeout=180s
+#
+# The job name is immutable; delete the old one before re-running with a new image:
+#   kubectl -n inday delete job inday-migrate --ignore-not-found
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: inday-migrate
+  namespace: inday
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app: inday
+        component: migrate
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: REGISTRY/inday:TAG # e.g. 123456789012.dkr.ecr.us-east-1.amazonaws.com/inday:latest
+          command: ["npx", "prisma", "migrate", "deploy"]
+          envFrom:
+            - secretRef:
+                name: inday-secrets
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

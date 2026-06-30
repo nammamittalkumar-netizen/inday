@@ -41,6 +41,12 @@ export const updateProfileSchema = z.object({
   image: imageUrl.nullish(),
 });
 
+export const updateInterestsSchema = z.object({
+  // Catalog slugs; unknown slugs are filtered server-side via sanitizeInterestSlugs.
+  interests: z.array(z.string().trim().max(40)).max(20),
+});
+
 export type CreatePostInput = z.infer<typeof createPostSchema>;
 export type CreateCommentInput = z.infer<typeof createCommentSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+export type UpdateInterestsInput = z.infer<typeof updateInterestsSchema>;

@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { initialOf } from "@/lib/format";
+import { avatarColor, initialsOf } from "@/lib/format";
 
 type Props = {
   name?: string | null;
@@ -16,9 +16,10 @@ export function UserAvatar({ name, image, className, fallbackClassName }: Props)
     <Avatar className={cn("size-10", className)}>
       {image ? <AvatarImage src={image} alt={name ?? "User"} /> : null}
       <AvatarFallback
-        className={cn("bg-primary/10 font-medium text-primary", fallbackClassName)}
+        style={{ backgroundColor: avatarColor(name) }}
+        className={cn("font-semibold uppercase text-white", fallbackClassName)}
       >
-        {initialOf(name)}
+        {initialsOf(name)}
       </AvatarFallback>
     </Avatar>
   );

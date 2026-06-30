@@ -47,7 +47,8 @@ export function SignupForm() {
         return;
       }
       toast.success("Welcome to Inday!");
-      router.push("/");
+      // Send new users to pick interests so we can suggest people to follow.
+      router.push("/onboarding");
       router.refresh();
     } catch (err) {
       toast.error(

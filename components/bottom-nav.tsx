@@ -3,16 +3,19 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Bell, Home, MessageCircle, PenSquare, User } from "lucide-react";
+import { Bell, Home, MessageCircle, PenSquare, Search } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { UserAvatar } from "@/components/user-avatar";
 
 /** Mobile-only bottom tab bar for top-level navigation (logged-in only). */
 export function BottomNav() {
   const pathname = usePathname();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
 
   if (status !== "authenticated") return null;
+
+  const user = session?.user;
 
   const items = [
     {
@@ -20,6 +23,12 @@ export function BottomNav() {
       label: "Home",
       icon: Home,
       active: pathname === "/" || pathname === "/feed",
+    },
+    {
+      href: "/discover",
+      label: "Discover",
+      icon: Search,
+      active: pathname === "/discover",
     },
     {
       href: "/new",
@@ -42,7 +51,7 @@ export function BottomNav() {
     {
       href: "/profile",
       label: "Profile",
-      icon: User,
+      icon: null,
       active: pathname.startsWith("/profile") || pathname === "/settings",
     },
   ];
@@ -52,7 +61,7 @@ export function BottomNav() {
       aria-label="Primary"
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden"
     >
-      <div className="mx-auto grid max-w-2xl grid-cols-5">
+      <div className="mx-auto grid max-w-2xl grid-cols-6">
         {items.map(({ href, label, icon: Icon, active }) => (
           <Link
             key={href}
@@ -63,7 +72,16 @@ export function BottomNav() {
               active ? "text-primary" : "text-muted-foreground hover:text-foreground",
             )}
           >
-            <Icon className="size-5" />
+            {Icon ? (
+              <Icon className="size-5" />
+            ) : (
+              <UserAvatar
+                name={user?.name}
+                image={user?.image}
+                className={cn("size-5", active && "ring-2 ring-primary")}
+                fallbackClassName="text-[0.6rem]"
+              />
+            )}
             {label}
           </Link>
         ))}

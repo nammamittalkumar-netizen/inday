@@ -1,0 +1,22 @@
+# Creates the database tables (prisma migrate deploy) using the locally-built image.
+# imagePullPolicy: Never => use the image imported into k3s, don't try to pull it.
+# Re-run later with: kubectl -n inday delete job inday-migrate ; kubectl apply -f 30-migrate-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: inday-migrate
+  namespace: inday
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: inday:local
+          imagePullPolicy: Never
+          command: ["npx", "prisma", "migrate", "deploy"]
+          envFrom:
+            - secretRef:
+                name: inday-secrets

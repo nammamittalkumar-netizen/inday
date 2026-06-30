@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inday-web
+  namespace: inday
+  labels:
+    app: inday
+spec:
+  # IMPORTANT: kept at 1.
+  # The chat WebSocket server (server.mjs) holds conversation "rooms" in process
+  # memory, so two participants on different pods would not see each other's live
+  # messages. To run >1 replica you must add a cross-pod fanout (e.g. Redis
+  # pub/sub) in server.mjs. See DEPLOY.md → "Scaling the WebSocket layer".
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: inday
+  template:
+    metadata:
+      labels:
+        app: inday
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+      containers:
+        - name: web
+          image: REGISTRY/inday:TAG # e.g. 123456789012.dkr.ecr.us-east-1.amazonaws.com/inday:latest
+          ports:
+            - name: http
+              containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: inday-config
+            - secretRef:
+                name: inday-secrets
+          # Give the server time to call app.prepare() before probes start.
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            failureThreshold: 30
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]

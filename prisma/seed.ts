@@ -3,8 +3,44 @@ import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
+// Mirrors the catalog in lib/interests.ts. Kept inline so the seed stays a
+// standalone script (no path-alias resolution under tsx).
+const INTEREST_CATALOG: { slug: string; label: string }[] = [
+  { slug: "technology", label: "Technology" },
+  { slug: "programming", label: "Programming" },
+  { slug: "design", label: "Design" },
+  { slug: "startups", label: "Startups" },
+  { slug: "science", label: "Science" },
+  { slug: "gaming", label: "Gaming" },
+  { slug: "music", label: "Music" },
+  { slug: "movies", label: "Movies & TV" },
+  { slug: "books", label: "Books" },
+  { slug: "art", label: "Art" },
+  { slug: "photography", label: "Photography" },
+  { slug: "food", label: "Food" },
+  { slug: "travel", label: "Travel" },
+  { slug: "fitness", label: "Fitness" },
+  { slug: "sports", label: "Sports" },
+  { slug: "fashion", label: "Fashion" },
+  { slug: "business", label: "Business" },
+  { slug: "finance", label: "Finance" },
+  { slug: "writing", label: "Writing" },
+  { slug: "news", label: "News & Politics" },
+  { slug: "nature", label: "Nature & Outdoors" },
+  { slug: "pets", label: "Pets" },
+];
+
 async function main() {
   const passwordHash = await bcrypt.hash("password123", 12);
+
+  // Upsert the interest catalog (kept across reseeds; users get cleared below).
+  for (const { slug, label } of INTEREST_CATALOG) {
+    await prisma.interest.upsert({
+      where: { slug },
+      update: { label },
+      create: { slug, label },
+    });
+  }
 
   // Idempotent: clear existing demo data first.
   await prisma.follow.deleteMany();
@@ -22,6 +58,13 @@ async function main() {
       passwordHash,
       bio: "First programmer, frequent victim of office machinery.",
       image: "https://res.cloudinary.com/demo/image/upload/woman.jpg",
+      interests: {
+        connect: [
+          { slug: "programming" },
+          { slug: "science" },
+          { slug: "writing" },
+        ],
+      },
     },
   });
 
@@ -32,6 +75,13 @@ async function main() {
       passwordHash,
       bio: "Debugging since before it was cool. Found the original bug.",
       image: "https://res.cloudinary.com/demo/image/upload/lady.jpg",
+      interests: {
+        connect: [
+          { slug: "programming" },
+          { slug: "technology" },
+          { slug: "science" },
+        ],
+      },
     },
   });
 
