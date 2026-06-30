@@ -10,6 +10,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/// Access level for a user. ADMIN unlocks the /admin dashboard and moderation
+/// actions; everyone else is a regular USER.
+enum Role {
+  USER
+  ADMIN
+}
+
 model User {
   id           String    @id @default(cuid())
   name         String
@@ -17,6 +24,7 @@ model User {
   passwordHash String
   image        String?
   bio          String?   @db.VarChar(200)
+  role         Role      @default(USER)
   createdAt    DateTime  @default(now())
 
   posts    Post[]

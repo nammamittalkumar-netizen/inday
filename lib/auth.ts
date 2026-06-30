@@ -1,9 +1,11 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
+import type { Role } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { loginSchema } from "@/lib/validations/auth";
+import { resolveRole } from "@/lib/roles";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
@@ -44,6 +46,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: user.name,
           email: user.email,
           image: user.image,
+          role: resolveRole(user.email, user.role),
         };
       },
     }),
@@ -53,16 +56,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id;
         token.picture = user.image ?? null;
+        token.role = user.role;
       }
-      // Refresh the avatar in the token after a profile update.
+      // Refresh the avatar and role in the token after a profile update.
       if (trigger === "update" && token.id) {
         const fresh = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { name: true, image: true },
+          select: { name: true, image: true, email: true, role: true },
         });
         if (fresh) {
           token.name = fresh.name;
           token.picture = fresh.image ?? null;
+          token.role = resolveRole(fresh.email, fresh.role);
         }
       }
       return token;
@@ -71,6 +76,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token.id && session.user) {
         session.user.id = token.id as string;
         session.user.image = (token.picture as string | null) ?? null;
+        session.user.role = (token.role as Role | undefined) ?? "USER";
       }
       return session;
     },

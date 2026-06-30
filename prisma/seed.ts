@@ -56,6 +56,8 @@ async function main() {
       name: "Ada Lovelace",
       email: "ada@example.com",
       passwordHash,
+      // Seed admin — sign in as ada@example.com / password123 to reach /admin.
+      role: "ADMIN",
       bio: "First programmer, frequent victim of office machinery.",
       image: "https://res.cloudinary.com/demo/image/upload/woman.jpg",
       interests: {

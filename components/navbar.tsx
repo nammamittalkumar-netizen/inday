@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { Menu, PenSquare, LogOut, User as UserIcon, Settings, Bell, MessageCircle, Search } from "lucide-react";
+import { Menu, PenSquare, LogOut, User as UserIcon, Settings, Bell, MessageCircle, Search, Shield } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand-logo";
@@ -27,6 +27,7 @@ export function Navbar() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const user = session?.user;
+  const isAdmin = user?.role === "ADMIN";
 
   async function handleSignOut() {
     await signOut({ redirect: false });
@@ -94,6 +95,12 @@ export function Navbar() {
                     <Settings className="size-4" />
                     Settings
                   </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem render={<Link href="/admin" />}>
+                      <Shield className="size-4" />
+                      Admin
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={handleSignOut}>
                     <LogOut className="size-4" />
                     Log out
@@ -191,6 +198,17 @@ export function Navbar() {
                   <Settings className="size-4" />
                   Settings
                 </Button>
+                {isAdmin && (
+                  <Button
+                    render={<Link href="/admin" />}
+                    variant="ghost"
+                    className="justify-start"
+                    onClick={() => setOpen(false)}
+                  >
+                    <Shield className="size-4" />
+                    Admin
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   className="justify-start"

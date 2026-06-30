@@ -1,5 +1,5 @@
-# The app itself, exposed on the EC2 public IP via a NodePort (port 30080).
-# Uses the locally-built image (imagePullPolicy: Never).
+# The app itself, exposed on the EC2 public IP via k3s's built-in LoadBalancer
+# (ServiceLB) on port 80. Pulls the image from Docker Hub.
 # replicas stays 1 — chat WebSocket rooms are in-process memory.
 ---
 apiVersion: apps/v1
@@ -21,8 +21,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: inday:local
-          imagePullPolicy: Never
+          image: mittaldocker124/inday:v1
           ports:
             - name: http
               containerPort: 3000
@@ -46,16 +45,17 @@ spec:
               port: http
             periodSeconds: 15
 ---
+# type: LoadBalancer => k3s's built-in load balancer (ServiceLB) exposes this on
+# the EC2 node's port 80. With >1 replica it would balance across pods.
 apiVersion: v1
 kind: Service
 metadata:
   name: inday-web
   namespace: inday
 spec:
-  type: NodePort
+  type: LoadBalancer
   selector:
     app: inday
   ports:
     - port: 80
       targetPort: http
-      nodePort: 30080
